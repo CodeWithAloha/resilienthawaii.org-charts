@@ -17,6 +17,7 @@
     var HOSPITALIZED_ROW_INDEX = 6;
     var DEATHS_ROW_INDEX = 7;
     var TOTAL_TESTED_ROW_INDEX = 9;
+    var TOTAL_TESTED_POSITIVE_ROW_INDEX = 11;
 
     var covidData;
 
@@ -32,7 +33,7 @@
       return currentIndex;
     }
 
-function updateTotal(currentTotal, previousTotal, totalId, newTotalId, percentChangeId) {
+    function updateTotal(currentTotal, previousTotal, totalId, newTotalId, percentChangeId) {
       var difference = currentTotal - previousTotal;
       var percentChange = Number(Math.round(((difference / previousTotal) * 100) + 'e' + 2) +'e-'+ 2);
 
@@ -84,7 +85,6 @@ function updateTotal(currentTotal, previousTotal, totalId, newTotalId, percentCh
       }
     }
 
-
     function populateDailyCases(data, chart) {
       if ('rows' in data) {
         data.rows.slice(1).slice(-1 * NUM_DAYS).forEach(function (item, index) {
@@ -95,6 +95,23 @@ function updateTotal(currentTotal, previousTotal, totalId, newTotalId, percentCh
             chart.data.datasets[2].data.push(item[BI_TOTAL_CASES_ROW_INDEX]);
             chart.data.datasets[3].data.push(item[KAUAI_TOTAL_CASES_ROW_INDEX]);
             chart.data.datasets[4].data.push(item[CASES_ROW_INDEX]);
+            chart.update();
+          }
+        });
+      }
+    }
+
+    function populateTestChart(data, chart) {
+      if ('rows' in data) {
+        data.rows.slice(1).slice(-1 * NUM_DAYS).forEach(function (item, index) {
+          if (item[DATE_ROW_INDEX] !== null) {
+            chart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
+            if (item[TOTAL_TESTED_ROW_INDEX] !== null) {
+              chart.data.datasets[0].data.push(parseInt(item[TOTAL_TESTED_ROW_INDEX].replace(/,/g, ''), 10));
+            } else {
+              chart.data.datasets[0].data.push(item[TOTAL_TESTED_ROW_INDEX]);
+            }
+            chart.data.datasets[1].data.push(parseInt(item[TOTAL_TESTED_POSITIVE_ROW_INDEX]));
             chart.update();
           }
         });
@@ -185,6 +202,7 @@ function updateTotal(currentTotal, previousTotal, totalId, newTotalId, percentCh
           populateTestedSpark(covidData, testedSparkChart);
 
           populateDailyCases(covidData, dailyCasesChart);
+          populateTestChart(covidData, testChart);
         }
       });
     }
@@ -353,104 +371,251 @@ function updateTotal(currentTotal, previousTotal, totalId, newTotalId, percentCh
   </div>
   <div class="cf mw8-ns tc center pa4 bb-ns bb b--light-silver">
     <div class="w-100 mb2">
-        <canvas id="daily_cases" height="200"></canvas>
-        <script>
-          var dailyCasesCtx = document.getElementById('daily_cases').getContext('2d');
-          var dailyCasesChart = new Chart(dailyCasesCtx, {
-            plugins: [
-              ChartDataLabels,
-              {
-                afterUpdate: function(chart) {
-                for (var i = 0; i < chart.config.data.datasets.length; i++) {
-                  var dataset = chart.config.data.datasets[i];
-                  var offset = -40;
-                  for (var j = 0; j < dataset._meta[4].data.length; j++) {
-                      var model = dataset._meta[4].data[j]._model;
-                      model.x += offset;
-                      model.controlPointNextX += offset;
-                      model.controlPointPreviousX += offset;
-                  }
-                }}
-              }
-            ],
-            type: 'bar',
-            data: {
-              labels: [],
-              datasets: [
-              {
-                data: [],
-                label: 'Oahu',
-                backgroundColor: '#5899DA'
-              },
-              {
-                data: [],
-                label: 'Maui/Molokai/Lanai',
-                backgroundColor: '#E8743B'
-              },
-              {
-                data: [],
-                label: 'Hawaii',
-                backgroundColor: '#19A979'
-              },
-              {
-                data: [],
-                label: 'Kauai',
-                backgroundColor: '#6C8893',
-              },
-              {
-                data: [],
-                label: 'Total',
-                type: 'line',
-                fill: false,
-                color: '#000'
-              }
-              ]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: true,
-              showScale: false,
-              title: {
-                display: true,
-                text: "Daily COVID-19 Cases",
-                fontSize: 32,
-                fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
-                fontColor: '#333',
-              },
-              legend: {
-                display: true,
-                labels: {
-                  fontColor: '#000',
-                  fontSize: 24
+      <canvas id="daily_cases" height="200"></canvas>
+      <script>
+        var dailyCasesCtx = document.getElementById('daily_cases').getContext('2d');
+        var dailyCasesChart = new Chart(dailyCasesCtx, {
+          plugins: [
+            ChartDataLabels,
+            {
+              afterUpdate: function(chart) {
+              for (var i = 0; i < chart.config.data.datasets.length; i++) {
+                var dataset = chart.config.data.datasets[i];
+                var offset = -40;
+                for (var j = 0; j < dataset._meta[4].data.length; j++) {
+                    var model = dataset._meta[4].data[j]._model;
+                    model.x += offset;
+                    model.controlPointNextX += offset;
+                    model.controlPointPreviousX += offset;
                 }
-              },
-              scales: {
-                yAxes: [{
-                  stacked: true,
-                  ticks: {
-                    beginAtZero: false,
-                  }
-                }],
-                xAxes: [{
-                  stacked: true,
-                  type: 'time',
-                  time: {
-                    unit: 'month'
-                  },
-                  barThickness: 'flex',
-                }]
-              }
+              }}
             }
-          });
-        </script>
+          ],
+          type: 'bar',
+          data: {
+            labels: [],
+            datasets: [
+            {
+              data: [],
+              label: 'Oahu',
+              backgroundColor: '#5899DA'
+            },
+            {
+              data: [],
+              label: 'Maui/Molokai/Lanai',
+              backgroundColor: '#E8743B'
+            },
+            {
+              data: [],
+              label: 'Hawaii',
+              backgroundColor: '#19A979'
+            },
+            {
+              data: [],
+              label: 'Kauai',
+              backgroundColor: '#6C8893',
+            },
+            {
+              data: [],
+              label: 'Total',
+              type: 'line',
+              fill: false,
+              color: '#000'
+            }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            showScale: false,
+            title: {
+              display: true,
+              text: "Daily COVID-19 Cases",
+              fontSize: 32,
+              fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
+              fontColor: '#333',
+            },
+            legend: {
+              display: true,
+              labels: {
+                fontColor: '#000',
+                fontSize: 24
+              }
+            },
+            scales: {
+              yAxes: [{
+                stacked: true,
+                ticks: {
+                  beginAtZero: false,
+                }
+              }],
+              xAxes: [{
+                stacked: true,
+                type: 'time',
+                time: {
+                  unit: 'month'
+                },
+                barThickness: 'flex',
+              }]
+            }
+          }
+        });
+      </script>
     </div>
   </div>
   <div class="cf mw8-ns tc center pa4 bb-ns bb b--light-silver">
     <div class="w-100 mb5">
+      <canvas id="daily_cases" height="200"></canvas>
+      <script>
+        var dailyCasesCtx = document.getElementById('daily_cases').getContext('2d');
+        var dailyCasesChart = new Chart(dailyCasesCtx, {
+          plugins: [
+            ChartDataLabels,
+            {
+              afterUpdate: function(chart) {
+              for (var i = 0; i < chart.config.data.datasets.length; i++) {
+                var dataset = chart.config.data.datasets[i];
+                var offset = -40;
+                for (var j = 0; j < dataset._meta[5].data.length; j++) {
+                    var model = dataset._meta[5].data[j]._model;
+                    model.x += offset;
+                    model.controlPointNextX += offset;
+                    model.controlPointPreviousX += offset;
+                }
+              }}
+            }
+          ],
+          type: 'bar',
+          data: {
+            labels: [],
+            datasets: [
+            {
+              data: [],
+              label: 'Oahu',
+              backgroundColor: '#5899DA'
+            },
+            {
+              data: [],
+              label: 'Maui/Molokai/Lanai',
+              backgroundColor: '#E8743B'
+            },
+            {
+              data: [],
+              label: 'Hawaii',
+              backgroundColor: '#19A979'
+            },
+            {
+              data: [],
+              label: 'Kauai',
+              backgroundColor: '#6C8893',
+            },
+            {
+              data: [],
+              label: 'Total',
+              type: 'line',
+              fill: false,
+              color: '#000'
+            }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            showScale: false,
+            title: {
+              display: true,
+              text: "Daily COVID-19 Cases",
+              fontSize: 32,
+              fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
+              fontColor: '#333',
+            },
+            legend: {
+              display: true,
+              labels: {
+                fontColor: '#000',
+                fontSize: 24
+              }
+            },
+            scales: {
+              yAxes: [{
+                stacked: true,
+                ticks: {
+                  beginAtZero: false,
+                }
+              }],
+              xAxes: [{
+                stacked: true,
+                type: 'time',
+                time: {
+                  unit: 'month'
+                },
+                barThickness: 'flex',
+              }]
+            }
+          }
+        });
+      </script>
     </div>
   </div>
   <div class="cf mw8-ns tc center pa4 bb-ns bb b--light-silver">
     <div class="w-100 mb5">
+      <canvas id="test_chart" height="200"></canvas>
+      <script>
+        var testCtx = document.getElementById('test_chart').getContext('2d');
+        var testChart = new Chart(testCtx, {
+          type: 'line',
+          data: {
+            labels: [],
+            datasets: [
+            {
+              data: [],
+              label: 'Tested',
+              backgroundColor: '#5899DA',
+              fill: true
+            },
+            {
+              data: [],
+              label: 'Positive',
+              backgroundColor: '#E8743B',
+              fill: true
+            }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            showScale: false,
+            title: {
+              display: true,
+              text: "Tested",
+              fontSize: 32,
+              fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
+              fontColor: '#333',
+            },
+            legend: {
+              display: true,
+              labels: {
+                fontColor: '#000',
+                fontSize: 24
+              }
+            },
+            scales: {
+              yAxes: [{
+                ticks: {
+                  beginAtZero: false,
+                }
+              }],
+              xAxes: [{
+                stacked: true,
+                type: 'time',
+                time: {
+                  unit: 'month'
+                },
+              }]
+            }
+          }
+        });
+      </script>
     </div>
   </div>
 </html>
