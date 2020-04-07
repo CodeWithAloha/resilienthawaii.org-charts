@@ -2,19 +2,33 @@
 <html lang="en">
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hawaii COVID-19 Charts</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/chart.js@2.9.3/dist/Chart.min.css,npm/tachyons@4.11.1" />
   <script src="https://cdn.jsdelivr.net/combine/npm/jquery@3.4.1,npm/moment@2.24.0,npm/chart.js@2.9.3,npm/chartjs-plugin-datalabels@0.7.0"></script>
   <script>
+    var NUM_DAYS = 21;
+
+    var DATE_ROW_INDEX = 0;
+    var CASES_ROW_INDEX = 1;
+    var OAHU_TOTAL_CASES_ROW_INDEX = 2;
+    var MAUI_TOTAL_CASES_ROW_INDEX = 3;
+    var BI_TOTAL_CASES_ROW_INDEX = 4;
+    var KAUAI_TOTAL_CASES_ROW_INDEX = 5;
+    var HOSPITALIZED_ROW_INDEX = 6;
+    var DEATHS_ROW_INDEX = 7;
+    var TOTAL_TESTED_ROW_INDEX = 9;
+
+
     var covidData;
 
-    function populateDashboard(data) {
+    function populateStateDashboard(data) {
       if ('rows' in data) {
-        var numRowsToGet = 4;
+        var numRowsToGet = 5;
         var lastNumRows = data.rows.slice(1).slice(-1 * numRowsToGet);
         var currentIndex;
 
         for (var i = numRowsToGet - 1; i > 0; i--) {
-          if ((lastNumRows[i] !== null) && (lastNumRows[i][0] !== null)) {
+          if ((lastNumRows[i] !== null) && (lastNumRows[i][DATE_ROW_INDEX] !== null)) {
             currentIndex = i;
             break;
           }
@@ -24,8 +38,8 @@
           var current = lastNumRows[currentIndex];
           var previous = lastNumRows[currentIndex-1];
 
-          var currentCasesTotal = current[1];
-          var previousCasesTotal = previous[1];
+          var currentCasesTotal = current[CASES_ROW_INDEX];
+          var previousCasesTotal = previous[CASES_ROW_INDEX];
           var newCases = currentCasesTotal - previousCasesTotal;
           var percentChangeCases = Number(Math.round(((newCases / previousCasesTotal) * 100) + 'e' + 2) +'e-'+ 2);
 
@@ -36,8 +50,8 @@
             $('#percent_change_cases').html((percentChangeCases > 0) ? "&#8599;&nbsp;" + percentChangeCases + "%": "&#8600;&nbsp;" + percentChangeCases);
           }
 
-          var currentDeathsTotal = current[7];
-          var previousDeathsTotal = previous[7];
+          var currentDeathsTotal = current[DEATHS_ROW_INDEX];
+          var previousDeathsTotal = previous[DEATHS_ROW_INDEX];
           var newDeaths = currentDeathsTotal - previousDeathsTotal;
           var percentChangeDeaths = Number(Math.round(((newDeaths / previousDeathsTotal) * 100) + 'e' + 2) +'e-'+ 2);
 
@@ -55,14 +69,14 @@
 
     function populateDailyCases(data, chart) {
       if ('rows' in data) {
-        data.rows.slice(1).slice(-21).forEach(function (item, index) {
-          if (item[0] !== null) {
+        data.rows.slice(1).slice(-1 * NUM_DAYS).forEach(function (item, index) {
+          if (item[DATE_ROW_INDEX] !== null) {
             chart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
-            chart.data.datasets[0].data.push(item[2]);
-            chart.data.datasets[1].data.push(item[3]);
-            chart.data.datasets[2].data.push(item[4]);
-            chart.data.datasets[3].data.push(item[5]);
-            chart.data.datasets[4].data.push(item[1]);
+            chart.data.datasets[0].data.push(item[OAHU_TOTAL_CASES_ROW_INDEX]);
+            chart.data.datasets[1].data.push(item[MAUI_TOTAL_CASES_ROW_INDEX]);
+            chart.data.datasets[2].data.push(item[BI_TOTAL_CASES_ROW_INDEX]);
+            chart.data.datasets[3].data.push(item[KAUAI_TOTAL_CASES_ROW_INDEX]);
+            chart.data.datasets[4].data.push(item[CASES_ROW_INDEX]);
             chart.update();
           }
         });
@@ -70,26 +84,26 @@
     }
 
     function populateCasesSpark(data, chart) {
-      _populateChartWithIndex(data, 21, chart, 1);
+      _populateChartWithIndex(data, NUM_DAYS, chart, CASES_ROW_INDEX);
     }
 
     function populateDeathsSpark(data, chart) {
-      _populateChartWithIndex(data, 21, chart, 7);
+      _populateChartWithIndex(data, NUM_DAYS, chart, DEATHS_ROW_INDEX);
     }
 
     function populateHospitalizedSpark(data, chart) {
-      _populateChartWithIndex(data, 21, chart, 6);
+      _populateChartWithIndex(data, NUM_DAYS, chart, HOSPITALIZED_ROW_INDEX);
     }
 
     function populateTestedSpark(data, chart) {
-      _populateChartWithIndex(data, 21, chart, 9);
+      _populateChartWithIndex(data, NUM_DAYS, chart, TOTAL_TESTED_ROW_INDEX);
     }
 
     function _populateChartWithIndex(data, numData, chart, rowIndex) {
       if ('rows' in data) {
         data.rows.slice(1).slice(-1 * numData).forEach(function (item, index) {
-          if (item[0] !== null) {
-            chart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
+          if (item[DATE_ROW_INDEX] !== null) {
+            chart.data.labels.push(moment(item[DATE_ROW_INDEX]).format('MM/DD/YY'));
             chart.data.datasets[0].data.push(parseInt(item[rowIndex]));
             chart.update();
           }
@@ -144,7 +158,7 @@
         url: 'https://covid19-hawaii.herokuapp.com/hawaii_daily.sqlite?sql=select+Date%2C+%5BTotal+Cases%5D%2C+%5BTotal+Oahu+Res%5D%2C+%5BTotal+Maui+Res%5D%2C+%5BTotal+HIsland+Res%5D%2C+%5BTotal+Kauai+Res%5D%2C+%5BTotal+Hosp%5D%2C+%5BTotal+Deaths%5D%2C+%5BTotal+Released%5D%2C+%5BTotal+Tests%5D%2C+%5BNegative+Tests%5D%2C+%5BPositive+Tests%5D+from+hawaii_daily+order+by+rowid&_format=json',
         success: function(data) {
           covidData = data;
-          populateDashboard(covidData);
+          populateStateDashboard(covidData);
 
           populateCasesSpark(covidData, casesSparkChart);
           populateDeathsSpark(covidData, deadSparkChart);
