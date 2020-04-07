@@ -10,6 +10,8 @@ Here's the plan:
 At some point, we will circle back with one another and just embed them into a
 single site.
 
+Currently deployed: [https://relaxed-gates-2d465e.netlify.com](https://relaxed-gates-2d465e.netlify.com)
+
 ## Browsersync
 
 Since I always forget this command, adding it here:
