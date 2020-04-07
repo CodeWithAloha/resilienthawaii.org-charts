@@ -4,47 +4,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/chart.js@2.9.3/dist/Chart.min.css,npm/tachyons@4.11.1" />
   <script src="https://cdn.jsdelivr.net/combine/npm/jquery@3.4.1,npm/moment@2.24.0,npm/chart.js@2.9.3,npm/chartjs-plugin-datalabels@0.7.0"></script>
+  <script>
+    var covidData;
+
+    function populateDashboard(data) {
+      if ('rows' in data) {
+        var lastTwoRows = data.rows.slice(1).slice(-2);
+        var current = lastTwoRows[1];
+        var previous = lastTwoRows[0];
+        var currentTotal = current[1];
+        var previousTotal = previous[1];
+        var newCases = currentTotal - previousTotal;
+        var percentChange = (newCases / previousTotal) * 100;
+        $('#total_cases').text(currentTotal);
+        $('#new_cases').text(newCases);
+        $('#percent_change').text(percentChange);
+        $('#title_data_updated').text("Hawaii (Last Updated: " + current[0] + ")");
+      }
+    }
+
+    function populateDailyCases(data, dailyCasesChart) {
+      if ('rows' in data) {
+        data.rows.slice(1).slice(-21).forEach(function (item, index) {
+          dailyCasesChart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
+          dailyCasesChart.data.datasets[0].data.push(item[2]);
+          dailyCasesChart.data.datasets[1].data.push(item[3]);
+          dailyCasesChart.data.datasets[2].data.push(item[4]);
+          dailyCasesChart.data.datasets[3].data.push(item[5]);
+          dailyCasesChart.data.datasets[4].data.push(item[1]);
+          dailyCasesChart.update();
+        });
+      }
+    }
+
+    function getCovidDataFromApi() {
+      $.ajax({
+        url: 'https://covid19-hawaii.herokuapp.com/hawaii_daily.sqlite?sql=select+Date%2C+%5BTotal+Cases%5D%2C+%5BTotal+Oahu+Res%5D%2C+%5BTotal+Maui+Res%5D%2C+%5BTotal+HIsland+Res%5D%2C+%5BTotal+Kauai+Res%5D%2C+%5BTotal+Hosp%5D%2C+%5BTotal+Deaths%5D%2C+%5BTotal+Released%5D%2C+%5BTotal+Tests%5D%2C+%5BNegative+Tests%5D%2C+%5BPositive+Tests%5D+from+hawaii_daily+order+by+rowid&_format=json',
+        success: function(data) {
+          covidData = data;
+          populateDashboard(covidData);
+          populateDailyCases(covidData, dailyCasesChart);
+        }
+      });
+    }
+
+    $(document).ready(function() {
+      getCovidDataFromApi();
+    });
+  </script>
 </head>
 <body>
   <article>
-    <div
-      class="vh-100 dt w-100 tc bg-dark-gray white cover"
-      style="background:url(http://mrmrs.github.io/photos/u/009.jpg) no-repeat center;"
-    >
-      <div class="dtc v-mid">
-        <header class="white-70">
-          <h2 class="f3 fw1 ttu tracked mb2 lh-title">
-            Hawaii COVID-19 Charts
-          </h2>
-        </header>
-        <blockquote class="ph0 mh0 measure f4 lh-copy center">
-          <cite class="f6 ttu tracked fs-normal">Code for Hawaii</cite>
-        </blockquote>
+    <div class="flex items-center justify-center">
+      <div class="w-100 mw9-s mw8-l">
+        <h1 class="f3 f2-m f1-l" id="title_data_updated"></h1>
+        <h1>Total Cases: <span id="total_cases"></span></h1>
+        <h1>New: <span id="new_cases"></span></h1>
+        <h1>% Change: <span id="percent_change"></span></h1>
       </div>
     </div>
     <div class="flex items-center justify-center">
       <div class="w-100 mw9-s mw8-l">
         <p>
-          <canvas id="daily_cases"></canvas>
+          <canvas id="daily_cases" height="200px"></canvas>
           <script>
-            Chart.pluginService.register({
-              afterUpdate: function(chart) {
-                for (var i = 0; i < chart.config.data.datasets.length; i++) {
-                  var dataset = chart.config.data.datasets[i];
-                  var offset = 20;
-                  for (var j = 0; j < dataset._meta[0].data.length; j++) {
-                      var model = dataset._meta[0].data[j]._model;
-                      model.x += offset;
-                      model.controlPointNextX += offset;
-                      model.controlPointPreviousX += offset;
-                  }
+            var dailyCasesCtx = document.getElementById('daily_cases').getContext('2d');
+            var dailyCasesChart = new Chart(dailyCasesCtx, {
+              plugins: [
+                ChartDataLabels,
+                {
+                  afterUpdate: function(chart) {
+                  for (var i = 0; i < chart.config.data.datasets.length; i++) {
+                    var dataset = chart.config.data.datasets[i];
+                    var offset = -40;
+                    for (var j = 0; j < dataset._meta[0].data.length; j++) {
+                        var model = dataset._meta[0].data[j]._model;
+                        model.x += offset;
+                        model.controlPointNextX += offset;
+                        model.controlPointPreviousX += offset;
+                    }
+                  }}
                 }
-              }
-            });
-
-            var ctx = document.getElementById('daily_cases').getContext('2d');
-            var lineChart = new Chart(ctx, {
-              plugins: [ChartDataLabels],
+              ],
               type: 'bar',
               data: {
                 labels: [],
@@ -75,20 +116,26 @@
                   type: 'line',
                   fill: false,
                   color: '#000'
-                },
+                }
                 ]
               },
               options: {
                 responsive: true,
+                maintainAspectRatio: true,
+                showScale: false,
                 title: {
                   display: true,
-                  text: "Daily COVID-19 Cases in Hawaii (Last 21 days)",
-                  fontSize: 32,
+                  text: "Daily COVID-19 Cases in Hawaii",
+                  fontSize: 30,
                   fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
                   fontColor: '#333',
+                  legend: {
                 },
-                legend: {
-                  display: true
+                  display: true,
+                  labels: {
+                    fontColor: 'rgb(255, 99, 132)',
+                    fontSize: 22
+                  }
                 },
                 scales: {
                   yAxes: [{
@@ -108,25 +155,6 @@
                 }
               }
             });
-            var getData = function() {
-              $.ajax({
-                url: 'https://covid19-hawaii.herokuapp.com/hawaii_daily.sqlite?sql=select+Date%2C+%5BTotal+Cases%5D%2C+%5BTotal+Oahu+Res%5D%2C+%5BTotal+Maui+Res%5D%2C+%5BTotal+HIsland+Res%5D%2C+%5BTotal+Kauai+Res%5D%2C+%5BTotal+Hosp%5D%2C+%5BTotal+Deaths%5D%2C+%5BTotal+Released%5D%2C+%5BTotal+Tests%5D%2C+%5BNegative+Tests%5D%2C+%5BPositive+Tests%5D+from+hawaii_daily+order+by+rowid&_format=json',
-                success: function(data) {
-                  if ('rows' in data) {
-                    data.rows.slice(1).slice(-21).forEach(function (item, index) {
-                      lineChart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
-                      lineChart.data.datasets[0].data.push(item[2]);
-                      lineChart.data.datasets[1].data.push(item[3]);
-                      lineChart.data.datasets[2].data.push(item[4]);
-                      lineChart.data.datasets[3].data.push(item[5]);
-                      lineChart.data.datasets[4].data.push(item[1]);
-                      lineChart.update();
-                    });
-                  }
-                }
-              });
-            };
-            getData();
           </script>
         </p>
       </div>
