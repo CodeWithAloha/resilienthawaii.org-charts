@@ -24,35 +24,119 @@
           var current = lastNumRows[currentIndex];
           var previous = lastNumRows[currentIndex-1];
 
-          var currentTotal = current[1];
-          var previousTotal = previous[1];
-          var newCases = currentTotal - previousTotal;
-          var percentChange = Number(Math.round(((newCases / previousTotal) * 100) + 'e' + 2) +'e-'+ 2);
-          $('#total_cases').text(currentTotal);
-          $('#new_cases').text(newCases);
+          var currentCasesTotal = current[1];
+          var previousCasesTotal = previous[1];
+          var newCases = currentCasesTotal - previousCasesTotal;
+          var percentChangeCases = Number(Math.round(((newCases / previousCasesTotal) * 100) + 'e' + 2) +'e-'+ 2);
 
-          $('#percent_change').addClass((percentChange > 0) ? 'dark-red' : 'dark-green');
-          $('#percent_change').html((percentChange > 0) ? "&#8599;&nbsp;" + percentChange : "&#8600;&nbsp;" + percentChange);
+          $('#total_cases').text(currentCasesTotal);
+          $('#new_cases').text("+" + newCases);
+          if (percentChangeCases != 0) {
+            $('#percent_change_cases').addClass((percentChangeCases > 0) ? 'dark-red' : 'dark-green');
+            $('#percent_change_cases').html((percentChangeCases > 0) ? "&#8599;&nbsp;" + percentChangeCases + "%": "&#8600;&nbsp;" + percentChangeCases);
+          }
+
+          var currentDeathsTotal = current[7];
+          var previousDeathsTotal = previous[7];
+          var newDeaths = currentDeathsTotal - previousDeathsTotal;
+          var percentChangeDeaths = Number(Math.round(((newDeaths / previousDeathsTotal) * 100) + 'e' + 2) +'e-'+ 2);
+
+          $('#total_deaths').text(currentDeathsTotal);
+          $('#new_deaths').text("+" + newDeaths);
+          if (percentChangeDeaths != 0) {
+            $('#percent_change_deaths').addClass((percentChangeDeaths > 0) ? 'dark-red' : 'dark-green');
+            $('#percent_change_deaths').html((percentChangeDeaths > 0) ? "&#8599;&nbsp;" + percentChangeDeaths + "%": "&#8600;&nbsp;" + percentChangeDeaths);
+          }
 
           $('#title_data_updated').text(current[0]);
         }
       }
     }
 
-    function populateDailyCases(data, dailyCasesChart) {
+    function populateDailyCases(data, chart) {
       if ('rows' in data) {
         data.rows.slice(1).slice(-21).forEach(function (item, index) {
           if (item[0] !== null) {
-            dailyCasesChart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
-            dailyCasesChart.data.datasets[0].data.push(item[2]);
-            dailyCasesChart.data.datasets[1].data.push(item[3]);
-            dailyCasesChart.data.datasets[2].data.push(item[4]);
-            dailyCasesChart.data.datasets[3].data.push(item[5]);
-            dailyCasesChart.data.datasets[4].data.push(item[1]);
-            dailyCasesChart.update();
+            chart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
+            chart.data.datasets[0].data.push(item[2]);
+            chart.data.datasets[1].data.push(item[3]);
+            chart.data.datasets[2].data.push(item[4]);
+            chart.data.datasets[3].data.push(item[5]);
+            chart.data.datasets[4].data.push(item[1]);
+            chart.update();
           }
         });
       }
+    }
+
+    function populateCasesSpark(data, chart) {
+      _populateChartWithIndex(data, 21, chart, 1);
+    }
+
+    function populateDeathsSpark(data, chart) {
+      _populateChartWithIndex(data, 21, chart, 7);
+    }
+
+    function populateHospitalizedSpark(data, chart) {
+      _populateChartWithIndex(data, 21, chart, 6);
+    }
+
+    function populateTestedSpark(data, chart) {
+      _populateChartWithIndex(data, 21, chart, 9);
+    }
+
+    function _populateChartWithIndex(data, numData, chart, rowIndex) {
+      if ('rows' in data) {
+        data.rows.slice(1).slice(-1 * numData).forEach(function (item, index) {
+          if (item[0] !== null) {
+            chart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
+            chart.data.datasets[0].data.push(parseInt(item[rowIndex]));
+            chart.update();
+          }
+        });
+      }
+    }
+
+    function getSparkOptions(title) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        elements: {
+          line: {
+            borderColor: '#000000',
+            borderWidth: 1
+          },
+          point: {
+            radius: 0
+          }
+        },
+        tooltips: {
+          enabled: false
+        },
+        title: {
+          display: true,
+          text: title,
+          fontSize: 32,
+          fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
+          fontColor: '#333',
+        },
+        legend: {
+          display: false,
+        },
+        scales: {
+          yAxes: [{
+            stacked: true,
+            display: false
+          }],
+          xAxes: [{
+            stacked: true,
+            type: 'time',
+            time: {
+              unit: 'month'
+            },
+          }]
+        }
+      };
     }
 
     function getCovidDataFromApi() {
@@ -61,125 +145,276 @@
         success: function(data) {
           covidData = data;
           populateDashboard(covidData);
+
+          populateCasesSpark(covidData, casesSparkChart);
+          populateDeathsSpark(covidData, deadSparkChart);
+          populateHospitalizedSpark(covidData, hospitalizedSparkChart);
+          populateTestedSpark(covidData, testedSparkChart);
+
           populateDailyCases(covidData, dailyCasesChart);
         }
       });
     }
 
     $(document).ready(function() {
+      Chart.plugins.unregister(ChartDataLabels);
       getCovidDataFromApi();
     });
   </script>
 </head>
-<body>
-  <article class="pa3">
-    <section class="tc">
-      <article class="w-100 ba b--black-20 mw6-ns center">
-        <h1 class="sans-serif f1">Hawaii</h1>
-        <h3 class="dark-gray">Last Updated: <span class="red f4" id="title_data_updated"></h3>
-        <div class="bt b--black-20 pa2">
-          <h2 class="f2">Total Cases: <span id="total_cases"></span></h2>
-          <h2 class="f2">New: <span id="new_cases"></span></h2>
-          <h2 class="f2">% Change: <span id="percent_change"></span></h2>
+<body class="system-sans-serif">
+  <h1 class="avenir tc f-subheadline lh-title">HAWAII COVID-19 CHARTS</h1>
+  <div class="cf mw8-ns tc center bg-light-gray pa4 ba b--light-silver mb4">
+    <div class="fl w-50-ns w-100 mb3 bb bn-ns b--light-silver">
+      <div class="pa4 pa2-ns">
+        <div class="f3 mb3">State Cases</div>
+        <div class="f1" id="total_cases"></div>
+        <div class="f4">
+          <span id="new_cases"></span>
+          (<span id="percent_change_cases"></span>)
         </div>
-      </article>
-    </section>
-    <div class="flex items-center justify-center">
-      <div class="w-100 mw9-s mw8-l">
-        <p>
-          <canvas id="daily_cases" height="200px"></canvas>
-          <script>
-            var dailyCasesCtx = document.getElementById('daily_cases').getContext('2d');
-            var dailyCasesChart = new Chart(dailyCasesCtx, {
-              plugins: [
-                ChartDataLabels,
-                {
-                  afterUpdate: function(chart) {
-                  for (var i = 0; i < chart.config.data.datasets.length; i++) {
-                    var dataset = chart.config.data.datasets[i];
-                    var offset = -40;
-                    for (var j = 0; j < dataset._meta[0].data.length; j++) {
-                        var model = dataset._meta[0].data[j]._model;
-                        model.x += offset;
-                        model.controlPointNextX += offset;
-                        model.controlPointPreviousX += offset;
-                    }
-                  }}
-                }
-              ],
-              type: 'bar',
-              data: {
-                labels: [],
-                datasets: [
-                {
-                  data: [],
-                  label: 'Oahu',
-                  backgroundColor: '#5899DA'
-                },
-                {
-                  data: [],
-                  label: 'Maui/Molokai/Lanai',
-                  backgroundColor: '#E8743B'
-                },
-                {
-                  data: [],
-                  label: 'Hawaii',
-                  backgroundColor: '#19A979'
-                },
-                {
-                  data: [],
-                  label: 'Kauai',
-                  backgroundColor: '#6C8893',
-                },
-                {
-                  data: [],
-                  label: 'Total',
-                  type: 'line',
-                  fill: false,
-                  color: '#000'
-                }
-                ]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                showScale: false,
-                title: {
-                  display: true,
-                  text: "Daily COVID-19 Cases",
-                  fontSize: 32,
-                  fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
-                  fontColor: '#333',
-                },
-                legend: {
-                  display: true,
-                  labels: {
-                    fontColor: '#000',
-                    fontSize: 24
-                  }
-                },
-                scales: {
-                  yAxes: [{
-                    stacked: true,
-                    ticks: {
-                      beginAtZero: false,
-                    }
-                  }],
-                  xAxes: [{
-                    stacked: true,
-                    type: 'time',
-                    time: {
-                      unit: 'month'
-                    },
-                    barThickness: 'flex',
-                  }]
-                }
-              }
-            });
-          </script>
-        </p>
       </div>
     </div>
-  </article>
-</body>
+    <div class="fl w-50-ns w-100 mb3">
+      <div class="pa4 pa2-ns">
+        <div class="f3 mb3">State Deaths</div>
+        <div class="f1" id="total_deaths"></div>
+        <div class="f4">
+          <span id="new_deaths"></span>
+          (<span id="percent_change_deaths"></span>)
+        </div>
+      </div>
+    </div>
+    <div class="w-100 dark-gray">Last Updated: <span class="bold" id="title_data_updated"></div>
+  </div>
+  <div class="cf mw8-ns tc center pa4 bb-ns b--light-silver">
+    <div class="fl w-25-ns w-100 mb3 br-ns bn-ns bb b--light-silver">
+      <div class="pa4 pa2-ns br-ns b--light-silver">
+        <div class="f3 mb3">Honolulu</div>
+        <div class="f1" id="total_cases"></div>
+        <div class="f4">
+          <span id="new_cases"></span>
+          (<span id="percent_change_cases"></span>)
+        </div>
+      </div>
+    </div>
+    <div class="fl w-25-ns w-100 mb3 br-ns bn-ns bb b--light-silver">
+      <div class="pa4 pa2-ns br-ns b--light-silver">
+        <div class="f3 mb3">Hawaii</div>
+        <div class="f1" id="total_deaths"></div>
+        <div class="f4">
+          <span id="new_deaths"></span>
+          (<span id="percent_change_deaths"></span>)
+        </div>
+      </div>
+    </div>
+    <div class="fl w-25-ns w-100 mb3 bn-ns bb b--light-silver">
+      <div class="pa4 pa2-ns br-ns b--light-silver">
+        <div class="f3 mb3">Kauai</div>
+        <div class="f1" id="total_cases"></div>
+        <div class="f4">
+          <span id="new_cases"></span>
+          (<span id="percent_change_cases"></span>)
+        </div>
+      </div>
+    </div>
+    <div class="fl w-25-ns w-100 mb3 bn-ns bb b--light-silver">
+      <div class="pa4 pa2-ns">
+        <div class="f3 mb3">Maui</div>
+        <div class="f1" id="total_deaths"></div>
+        <div class="f4">
+          <span id="new_deaths"></span>
+          (<span id="percent_change_deaths"></span>)
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cf mw8-ns tc center pa4 bb-ns b--light-silver">
+    <div class="w-100 mb5">
+      <div class="center w-50 w-25-ns br-pill bg-dark-gray pa2 white shadow-3">STATEWIDE</div>
+    </div>
+    <div class="fl w-25-ns w-100 mb3 bn-ns bb b--light-silver">
+      <div class="pa4 pa2-ns">
+        <canvas id="cases_spark" height="200px"></canvas>
+        <script>
+          var casesSparkCtx = document.getElementById('cases_spark').getContext('2d');
+          var casesSparkChart = new Chart(casesSparkCtx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [{
+                data: [],
+                fill: true,
+                color: '#000'
+              }]
+            },
+            options: getSparkOptions('Cases')
+          });
+        </script>
+      </div>
+    </div>
+    <div class="fl w-25-ns w-100 mb3 br-ns bn-ns bb b--light-silver">
+      <div class="pa4 pa2-ns br-ns b--light-silver">
+        <canvas id="dead_spark" height="200"></canvas>
+        <script>
+          var deadSparkCtx = document.getElementById('dead_spark').getContext('2d');
+          var deadSparkChart = new Chart(deadSparkCtx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [{
+                data: [],
+                fill: true,
+                color: '#000'
+              }]
+            },
+            options: getSparkOptions('Deaths')
+          });
+        </script>
+      </div>
+    </div>
+    <div class="fl w-25-ns w-100 mb3 br-ns bn-ns bb b--light-silver">
+      <div class="pa4 pa2-ns br-ns b--light-silver">
+        <canvas id="hospitalized_spark" height="200px"></canvas>
+        <script>
+          var hospitalizedSparkCtx = document.getElementById('hospitalized_spark').getContext('2d');
+          var hospitalizedSparkChart = new Chart(hospitalizedSparkCtx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [{
+                data: [],
+                fill: true,
+                color: '#000'
+              }]
+            },
+            options: getSparkOptions('Hospitalized')
+          });
+        </script>
+      </div>
+    </div>
+    <div class="fl w-25-ns w-100 mb3 br-ns bn-ns bb b--light-silver">
+      <div class="pa4 pa2-ns br-ns b--light-silver">
+        <canvas id="tested_spark" height="200px"></canvas>
+        <script>
+          var testedSparkCtx = document.getElementById('tested_spark').getContext('2d');
+          var testedSparkChart = new Chart(testedSparkCtx, {
+            type: 'line',
+            data: {
+              labels: [],
+              datasets: [{
+                data: [],
+                fill: true,
+                color: '#000'
+              }]
+            },
+            options: getSparkOptions('Tested')
+          });
+        </script>
+      </div>
+    </div>
+  </div>
+  <div class="cf mw8-ns tc center pa4 bb-ns bb b--light-silver">
+    <div class="w-100 mb2">
+        <canvas id="daily_cases" height="200"></canvas>
+        <script>
+          var dailyCasesCtx = document.getElementById('daily_cases').getContext('2d');
+          var dailyCasesChart = new Chart(dailyCasesCtx, {
+            plugins: [
+              ChartDataLabels,
+              {
+                afterUpdate: function(chart) {
+                for (var i = 0; i < chart.config.data.datasets.length; i++) {
+                  var dataset = chart.config.data.datasets[i];
+                  var offset = -40;
+                  for (var j = 0; j < dataset._meta[4].data.length; j++) {
+                      var model = dataset._meta[4].data[j]._model;
+                      model.x += offset;
+                      model.controlPointNextX += offset;
+                      model.controlPointPreviousX += offset;
+                  }
+                }}
+              }
+            ],
+            type: 'bar',
+            data: {
+              labels: [],
+              datasets: [
+              {
+                data: [],
+                label: 'Oahu',
+                backgroundColor: '#5899DA'
+              },
+              {
+                data: [],
+                label: 'Maui/Molokai/Lanai',
+                backgroundColor: '#E8743B'
+              },
+              {
+                data: [],
+                label: 'Hawaii',
+                backgroundColor: '#19A979'
+              },
+              {
+                data: [],
+                label: 'Kauai',
+                backgroundColor: '#6C8893',
+              },
+              {
+                data: [],
+                label: 'Total',
+                type: 'line',
+                fill: false,
+                color: '#000'
+              }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: true,
+              showScale: false,
+              title: {
+                display: true,
+                text: "Daily COVID-19 Cases",
+                fontSize: 32,
+                fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
+                fontColor: '#333',
+              },
+              legend: {
+                display: true,
+                labels: {
+                  fontColor: '#000',
+                  fontSize: 24
+                }
+              },
+              scales: {
+                yAxes: [{
+                  stacked: true,
+                  ticks: {
+                    beginAtZero: false,
+                  }
+                }],
+                xAxes: [{
+                  stacked: true,
+                  type: 'time',
+                  time: {
+                    unit: 'month'
+                  },
+                  barThickness: 'flex',
+                }]
+              }
+            }
+          });
+        </script>
+    </div>
+  </div>
+  <div class="cf mw8-ns tc center pa4 bb-ns bb b--light-silver">
+    <div class="w-100 mb5">
+    </div>
+  </div>
+  <div class="cf mw8-ns tc center pa4 bb-ns bb b--light-silver">
+    <div class="w-100 mb5">
+    </div>
+  </div>
 </html>
+</body>
