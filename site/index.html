@@ -15,10 +15,13 @@
         var currentTotal = current[1];
         var previousTotal = previous[1];
         var newCases = currentTotal - previousTotal;
-        var percentChange = (newCases / previousTotal) * 100;
+        var percentChange = Number(Math.round(((newCases / previousTotal) * 100) + 'e' + 2) +'e-'+ 2);
         $('#total_cases').text(currentTotal);
         $('#new_cases').text(newCases);
-        $('#percent_change').text(percentChange);
+
+        $('#percent_change').addClass((percentChange > 0) ? 'dark-red' : 'dark-green');
+        $('#percent_change').html((percentChange > 0) ? "&#8599;&nbsp;" + percentChange : "&#8600;&nbsp;" + percentChange);
+
         $('#title_data_updated').text(current[0]);
       }
     }
@@ -54,15 +57,18 @@
   </script>
 </head>
 <body>
-  <article>
-    <div class="flex items-center justify-center">
-      <div class="w-100 mw9-s mw8-l">
-        <h1 class="sans-serif f-subheadline lh-title pa3" style="background-color:#FFFF00">Hawaii <span class="f4 mr2 dark-gray">Last Updated:</span><span class="red f4" id="title_data_updated"></span></h1>
-        <h1>Total Cases: <span id="total_cases"></span></h1>
-        <h1>New: <span id="new_cases"></span></h1>
-        <h1>% Change: <span id="percent_change"></span></h1>
-      </div>
-    </div>
+  <article class="pa3">
+    <section class="tc pa3 pa6-ns">
+      <article class="w-100 ba b--black-20 mw9-s mw6-l center">
+        <h1 class="sans-serif f-subheadline lh-title">Hawaii</h1>
+        <h3 class="dark-gray">Last Updated: <span class="red f4" id="title_data_updated"></h3>
+        <div class="bt b--black-20 pa2">
+          <h2 class="f2">Total Cases: <span id="total_cases"></span></h2>
+          <h2 class="f2">New: <span id="new_cases"></span></h2>
+          <h2 class="f2">% Change: <span id="percent_change"></span></h2>
+        </div>
+      </article>
+    </section>
     <div class="flex items-center justify-center">
       <div class="w-100 mw9-s mw8-l">
         <p>
@@ -125,7 +131,7 @@
                 showScale: false,
                 title: {
                   display: true,
-                  text: "Daily COVID-19 Cases in Hawaii",
+                  text: "Daily COVID-19 Cases",
                   fontSize: 30,
                   fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
                   fontColor: '#333',
