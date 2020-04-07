@@ -19,7 +19,7 @@
         $('#total_cases').text(currentTotal);
         $('#new_cases').text(newCases);
         $('#percent_change').text(percentChange);
-        $('#title_data_updated').text("Hawaii (Last Updated: " + current[0] + ")");
+        $('#title_data_updated').text(current[0]);
       }
     }
 
@@ -57,7 +57,7 @@
   <article>
     <div class="flex items-center justify-center">
       <div class="w-100 mw9-s mw8-l">
-        <h1 class="f3 f2-m f1-l" id="title_data_updated"></h1>
+        <h1 class="sans-serif f-subheadline lh-title pa3" style="background-color:#FFFF00">Hawaii <span class="f4 mr2 dark-gray">Last Updated:</span><span class="red f4" id="title_data_updated"></span></h1>
         <h1>Total Cases: <span id="total_cases"></span></h1>
         <h1>New: <span id="new_cases"></span></h1>
         <h1>% Change: <span id="percent_change"></span></h1>
