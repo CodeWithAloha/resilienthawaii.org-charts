@@ -18,54 +18,72 @@
     var DEATHS_ROW_INDEX = 7;
     var TOTAL_TESTED_ROW_INDEX = 9;
 
-
     var covidData;
+
+    function _getIndexOfConsecutiveRows(data) {
+      var currentIndex = 0;
+
+      for (var i = data.length - 1; i > 0; i--) {
+        if ((data[i] !== null) && (data[i][DATE_ROW_INDEX] !== null) && (data[i-1][DATE_ROW_INDEX] !== null)) {
+          currentIndex = i;
+          break;
+        }
+      }
+      return currentIndex;
+    }
+
+function updateTotal(currentTotal, previousTotal, totalId, newTotalId, percentChangeId) {
+      var difference = currentTotal - previousTotal;
+      var percentChange = Number(Math.round(((difference / previousTotal) * 100) + 'e' + 2) +'e-'+ 2);
+
+      $('#' + totalId).text(currentTotal);
+      $('#' + newTotalId).text("+" + difference);
+      if (percentChange != 0) {
+        $('#' + percentChangeId).addClass((percentChange > 0) ? 'dark-red' : 'dark-green');
+        $('#' + percentChangeId).html((percentChange> 0) ? "&#8599;&nbsp;" + percentChange + "%": "&#8600;&nbsp;" + percentChange);
+      } else {
+        $('#' + percentChangeId).html("-");
+      }
+    }
 
     function populateStateDashboard(data) {
       if ('rows' in data) {
         var numRowsToGet = 5;
         var lastNumRows = data.rows.slice(1).slice(-1 * numRowsToGet);
-        var currentIndex;
-
-        for (var i = numRowsToGet - 1; i > 0; i--) {
-          if ((lastNumRows[i] !== null) && (lastNumRows[i][DATE_ROW_INDEX] !== null)) {
-            currentIndex = i;
-            break;
-          }
-        }
+        var currentIndex = _getIndexOfConsecutiveRows(lastNumRows);
 
         if (currentIndex > 0) {
+
           var current = lastNumRows[currentIndex];
           var previous = lastNumRows[currentIndex-1];
 
-          var currentCasesTotal = current[CASES_ROW_INDEX];
-          var previousCasesTotal = previous[CASES_ROW_INDEX];
-          var newCases = currentCasesTotal - previousCasesTotal;
-          var percentChangeCases = Number(Math.round(((newCases / previousCasesTotal) * 100) + 'e' + 2) +'e-'+ 2);
+          updateTotal(current[CASES_ROW_INDEX], previous[CASES_ROW_INDEX], 'state_total_cases', 'state_new_cases', 'state_percent_change_cases');
+          updateTotal(current[DEATHS_ROW_INDEX], previous[DEATHS_ROW_INDEX], 'state_total_deaths', 'state_new_deaths', 'state_percent_change_deaths');
 
-          $('#total_cases').text(currentCasesTotal);
-          $('#new_cases').text("+" + newCases);
-          if (percentChangeCases != 0) {
-            $('#percent_change_cases').addClass((percentChangeCases > 0) ? 'dark-red' : 'dark-green');
-            $('#percent_change_cases').html((percentChangeCases > 0) ? "&#8599;&nbsp;" + percentChangeCases + "%": "&#8600;&nbsp;" + percentChangeCases);
-          }
-
-          var currentDeathsTotal = current[DEATHS_ROW_INDEX];
-          var previousDeathsTotal = previous[DEATHS_ROW_INDEX];
-          var newDeaths = currentDeathsTotal - previousDeathsTotal;
-          var percentChangeDeaths = Number(Math.round(((newDeaths / previousDeathsTotal) * 100) + 'e' + 2) +'e-'+ 2);
-
-          $('#total_deaths').text(currentDeathsTotal);
-          $('#new_deaths').text("+" + newDeaths);
-          if (percentChangeDeaths != 0) {
-            $('#percent_change_deaths').addClass((percentChangeDeaths > 0) ? 'dark-red' : 'dark-green');
-            $('#percent_change_deaths').html((percentChangeDeaths > 0) ? "&#8599;&nbsp;" + percentChangeDeaths + "%": "&#8600;&nbsp;" + percentChangeDeaths);
-          }
-
-          $('#title_data_updated').text(current[0]);
+          $('#data_updated').text(current[0]);
         }
       }
     }
+
+    function populateIslandDashboard(data) {
+      if ('rows' in data) {
+        var numRowsToGet = 5;
+        var lastNumRows = data.rows.slice(1).slice(-1 * numRowsToGet);
+        var currentIndex = _getIndexOfConsecutiveRows(lastNumRows);
+
+        if (currentIndex > 0) {
+
+          var current = lastNumRows[currentIndex];
+          var previous = lastNumRows[currentIndex-1];
+
+          updateTotal(current[OAHU_TOTAL_CASES_ROW_INDEX], previous[OAHU_TOTAL_CASES_ROW_INDEX], 'oahu_total_cases', 'oahu_new_cases', 'oahu_percent_change_cases');
+          updateTotal(current[MAUI_TOTAL_CASES_ROW_INDEX], previous[MAUI_TOTAL_CASES_ROW_INDEX], 'maui_total_cases', 'maui_new_cases', 'maui_percent_change_cases');
+          updateTotal(current[BI_TOTAL_CASES_ROW_INDEX], previous[BI_TOTAL_CASES_ROW_INDEX], 'bi_total_cases', 'bi_new_cases', 'bi_percent_change_cases');
+          updateTotal(current[KAUAI_TOTAL_CASES_ROW_INDEX], previous[KAUAI_TOTAL_CASES_ROW_INDEX], 'kauai_total_cases', 'kauai_new_cases', 'kauai_percent_change_cases');
+        }
+      }
+    }
+
 
     function populateDailyCases(data, chart) {
       if ('rows' in data) {
@@ -159,6 +177,7 @@
         success: function(data) {
           covidData = data;
           populateStateDashboard(covidData);
+          populateIslandDashboard(covidData);
 
           populateCasesSpark(covidData, casesSparkChart);
           populateDeathsSpark(covidData, deadSparkChart);
@@ -182,34 +201,34 @@
     <div class="fl w-50-ns w-100 mb3 bb bn-ns b--light-silver">
       <div class="pa4 pa2-ns">
         <div class="f3 mb3">State Cases</div>
-        <div class="f1" id="total_cases"></div>
+        <div class="f1" id="state_total_cases"></div>
         <div class="f4">
-          <span id="new_cases"></span>
-          (<span id="percent_change_cases"></span>)
+          <span id="state_new_cases"></span>
+          (<span id="state_percent_change_cases"></span>)
         </div>
       </div>
     </div>
     <div class="fl w-50-ns w-100 mb3">
       <div class="pa4 pa2-ns">
         <div class="f3 mb3">State Deaths</div>
-        <div class="f1" id="total_deaths"></div>
+        <div class="f1" id="state_total_deaths"></div>
         <div class="f4">
-          <span id="new_deaths"></span>
-          (<span id="percent_change_deaths"></span>)
+          <span id="state_new_deaths"></span>
+          (<span id="state_percent_change_deaths"></span>)
         </div>
       </div>
     </div>
-    <div class="w-100 dark-gray">Last Updated: <span class="bold" id="title_data_updated"></div>
+    <div class="w-100 dark-gray">Last Updated: <span class="bold" id="data_updated"></div>
   </div>
   <div class="cf mw8-ns tc center pa4 bb-ns b--light-silver">
     <div class="fl w-25-ns w-100 mb3 br-ns bn-ns bb b--light-silver">
       <div class="pa4 pa2-ns br-ns b--light-silver">
         <img class="bg-dark-gray mb3 w-80" src="/media/img/honolulu.svg" />
         <div class="f3 mb3">Honolulu</div>
-        <div class="f1" id="total_cases"></div>
+        <div class="f1" id="oahu_total_cases"></div>
         <div class="f4">
-          <span id="new_cases"></span>
-          (<span id="percent_change_cases"></span>)
+          <span id="oahu_new_cases"></span>
+          (<span id="oahu_percent_change_cases"></span>)
         </div>
       </div>
     </div>
@@ -217,10 +236,10 @@
       <div class="pa4 pa2-ns br-ns b--light-silver">
         <img class="bg-dark-gray mb3 w-80" src="/media/img/hawaii.svg" />
         <div class="f3 mb3">Hawaii</div>
-        <div class="f1" id="total_deaths"></div>
+        <div class="f1" id="bi_total_cases"></div>
         <div class="f4">
-          <span id="new_deaths"></span>
-          (<span id="percent_change_deaths"></span>)
+          <span id="bi_new_cases"></span>
+          (<span id="bi_percent_change_cases"></span>)
         </div>
       </div>
     </div>
@@ -228,10 +247,10 @@
       <div class="pa4 pa2-ns br-ns b--light-silver">
         <img class="bg-dark-gray mb3 w-80" src="/media/img/kauai.svg" />
         <div class="f3 mb3">Kauai</div>
-        <div class="f1" id="total_cases"></div>
+        <div class="f1" id="kauai_total_cases"></div>
         <div class="f4">
-          <span id="new_cases"></span>
-          (<span id="percent_change_cases"></span>)
+          <span id="kauai_new_cases"></span>
+          (<span id="kauai_percent_change_cases"></span>)
         </div>
       </div>
     </div>
@@ -239,10 +258,10 @@
       <div class="pa4 pa2-ns">
         <img class="bg-dark-gray mb3 w-80" src="/media/img/maui.svg" />
         <div class="f3 mb3">Maui</div>
-        <div class="f1" id="total_deaths"></div>
+        <div class="f1" id="maui_total_cases"></div>
         <div class="f4">
-          <span id="new_deaths"></span>
-          (<span id="percent_change_deaths"></span>)
+          <span id="maui_new_cases"></span>
+          (<span id="maui_percent_change_cases"></span>)
         </div>
       </div>
     </div>
