@@ -9,33 +9,48 @@
 
     function populateDashboard(data) {
       if ('rows' in data) {
-        var lastTwoRows = data.rows.slice(1).slice(-2);
-        var current = lastTwoRows[1];
-        var previous = lastTwoRows[0];
-        var currentTotal = current[1];
-        var previousTotal = previous[1];
-        var newCases = currentTotal - previousTotal;
-        var percentChange = Number(Math.round(((newCases / previousTotal) * 100) + 'e' + 2) +'e-'+ 2);
-        $('#total_cases').text(currentTotal);
-        $('#new_cases').text(newCases);
+        var numRowsToGet = 4;
+        var lastNumRows = data.rows.slice(1).slice(-1 * numRowsToGet);
+        var currentIndex;
 
-        $('#percent_change').addClass((percentChange > 0) ? 'dark-red' : 'dark-green');
-        $('#percent_change').html((percentChange > 0) ? "&#8599;&nbsp;" + percentChange : "&#8600;&nbsp;" + percentChange);
+        for (var i = numRowsToGet - 1; i > 0; i--) {
+          if ((lastNumRows[i] !== null) && (lastNumRows[i][0] !== null)) {
+            currentIndex = i;
+            break;
+          }
+        }
 
-        $('#title_data_updated').text(current[0]);
+        if (currentIndex > 0) {
+          var current = lastNumRows[currentIndex];
+          var previous = lastNumRows[currentIndex-1];
+
+          var currentTotal = current[1];
+          var previousTotal = previous[1];
+          var newCases = currentTotal - previousTotal;
+          var percentChange = Number(Math.round(((newCases / previousTotal) * 100) + 'e' + 2) +'e-'+ 2);
+          $('#total_cases').text(currentTotal);
+          $('#new_cases').text(newCases);
+
+          $('#percent_change').addClass((percentChange > 0) ? 'dark-red' : 'dark-green');
+          $('#percent_change').html((percentChange > 0) ? "&#8599;&nbsp;" + percentChange : "&#8600;&nbsp;" + percentChange);
+
+          $('#title_data_updated').text(current[0]);
+        }
       }
     }
 
     function populateDailyCases(data, dailyCasesChart) {
       if ('rows' in data) {
         data.rows.slice(1).slice(-21).forEach(function (item, index) {
-          dailyCasesChart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
-          dailyCasesChart.data.datasets[0].data.push(item[2]);
-          dailyCasesChart.data.datasets[1].data.push(item[3]);
-          dailyCasesChart.data.datasets[2].data.push(item[4]);
-          dailyCasesChart.data.datasets[3].data.push(item[5]);
-          dailyCasesChart.data.datasets[4].data.push(item[1]);
-          dailyCasesChart.update();
+          if (item[0] !== null) {
+            dailyCasesChart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
+            dailyCasesChart.data.datasets[0].data.push(item[2]);
+            dailyCasesChart.data.datasets[1].data.push(item[3]);
+            dailyCasesChart.data.datasets[2].data.push(item[4]);
+            dailyCasesChart.data.datasets[3].data.push(item[5]);
+            dailyCasesChart.data.datasets[4].data.push(item[1]);
+            dailyCasesChart.update();
+          }
         });
       }
     }
@@ -58,9 +73,9 @@
 </head>
 <body>
   <article class="pa3">
-    <section class="tc pa3 pa6-ns">
-      <article class="w-100 ba b--black-20 mw9-s mw6-l center">
-        <h1 class="sans-serif f-subheadline lh-title">Hawaii</h1>
+    <section class="tc">
+      <article class="w-100 ba b--black-20 mw6-ns center">
+        <h1 class="sans-serif f1">Hawaii</h1>
         <h3 class="dark-gray">Last Updated: <span class="red f4" id="title_data_updated"></h3>
         <div class="bt b--black-20 pa2">
           <h2 class="f2">Total Cases: <span id="total_cases"></span></h2>
@@ -132,15 +147,15 @@
                 title: {
                   display: true,
                   text: "Daily COVID-19 Cases",
-                  fontSize: 30,
+                  fontSize: 32,
                   fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
                   fontColor: '#333',
-                  legend: {
                 },
+                legend: {
                   display: true,
                   labels: {
-                    fontColor: 'rgb(255, 99, 132)',
-                    fontSize: 22
+                    fontColor: '#000',
+                    fontSize: 24
                   }
                 },
                 scales: {
