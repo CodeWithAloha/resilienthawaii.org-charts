@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hawaii COVID-19 Charts</title>
+  <title>Hawaii COVID19 Charts & Statistics | Resilient Hawaii</title>
+  <meta name="description" content="Charts & Statistics specific to Hawaii concerning the novel coronavirus global pandemic (COVID-19/SARS-CoV-2)" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/chart.js@2.9.3/dist/Chart.min.css,npm/tachyons@4.11.1" />
   <script src="https://cdn.jsdelivr.net/combine/npm/jquery@3.4.1,npm/moment@2.24.0,npm/chart.js@2.9.3,npm/chartjs-plugin-datalabels@0.7.0"></script>
   <script>
@@ -16,6 +17,7 @@
     var KAUAI_TOTAL_CASES_ROW_INDEX = 5;
     var HOSPITALIZED_ROW_INDEX = 6;
     var DEATHS_ROW_INDEX = 7;
+    var RECOVERED_ROW_INDEX = 8;
     var TOTAL_TESTED_ROW_INDEX = 9;
     var TOTAL_TESTED_POSITIVE_ROW_INDEX = 11;
 
@@ -118,6 +120,20 @@
       }
     }
 
+    function populateHospitalizedChart(data, chart) {
+      if ('rows' in data) {
+        data.rows.slice(1).slice(-1 * NUM_DAYS).forEach(function (item, index) {
+          if (item[DATE_ROW_INDEX] !== null) {
+            chart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
+            chart.data.datasets[0].data.push(parseInt(item[HOSPITALIZED_ROW_INDEX]));
+            chart.data.datasets[1].data.push(parseInt(item[RECOVERED_ROW_INDEX]));
+            chart.data.datasets[2].data.push(parseInt(item[DEATHS_ROW_INDEX]));
+            chart.update();
+          }
+        });
+      }
+    }
+
     function populateCasesSpark(data, chart) {
       _populateChartWithIndex(data, NUM_DAYS, chart, CASES_ROW_INDEX);
     }
@@ -203,6 +219,7 @@
 
           populateDailyCases(covidData, dailyCasesChart);
           populateTestChart(covidData, testChart);
+          populateHospitalizedChart(covidData, hospitalizedChart);
         }
       });
     }
@@ -214,7 +231,18 @@
   </script>
 </head>
 <body class="system-sans-serif">
+  <div class="w-50 mw4-ns tc center mt3">
+    <a href="https://resilienthawaii.org"><img src="/media/img/logo-color.png"/></a>
+  </div>
   <h1 class="avenir tc f-subheadline lh-title">HAWAII COVID-19 CHARTS</h1>
+  <div class="w-75 mw8-ns tc center mb5 mid-gray">
+    <p>
+    The data contained within these visualizations are being fed by the <a href="https://covid19-hawaii.herokuapp.com">Hawaii COVID19 API</a> that is serving the data contained within the community maintained Google Doc, <a href="https://docs.google.com/spreadsheets/u/1/d/1WTUg75_mm35Z2C6PQd5AOKtVeSNfci5Mp0G_pgYTqQI/">Daily Hawaii COVID-19 Cases</a>.
+    </p>
+    <p class="b black">
+    Disclaimer: Like everything else you read on the internet, <span class="dark-red"> please check the source to make sure it’s up to date.</span>
+    </p>
+  </div>
   <div class="cf mw8-ns tc center bg-light-gray pa4 ba b--light-silver mb4">
     <div class="fl w-50-ns w-100 mb3 bb bn-ns b--light-silver">
       <div class="pa4 pa2-ns">
@@ -430,7 +458,7 @@
             showScale: false,
             title: {
               display: true,
-              text: "Daily COVID-19 Cases",
+              text: "Daily COVID-19 Cases By Island",
               fontSize: 32,
               fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
               fontColor: '#333',
@@ -465,57 +493,32 @@
   </div>
   <div class="cf mw8-ns tc center pa4 bb-ns bb b--light-silver">
     <div class="w-100 mb5">
-      <canvas id="daily_cases" height="200"></canvas>
+      <canvas id="hospitalized_chart" height="200"></canvas>
       <script>
-        var dailyCasesCtx = document.getElementById('daily_cases').getContext('2d');
-        var dailyCasesChart = new Chart(dailyCasesCtx, {
-          plugins: [
-            ChartDataLabels,
-            {
-              afterUpdate: function(chart) {
-              for (var i = 0; i < chart.config.data.datasets.length; i++) {
-                var dataset = chart.config.data.datasets[i];
-                var offset = -40;
-                for (var j = 0; j < dataset._meta[5].data.length; j++) {
-                    var model = dataset._meta[5].data[j]._model;
-                    model.x += offset;
-                    model.controlPointNextX += offset;
-                    model.controlPointPreviousX += offset;
-                }
-              }}
-            }
-          ],
-          type: 'bar',
+        var hospitalizedContext = document.getElementById('hospitalized_chart').getContext('2d');
+        var hospitalizedChart = new Chart(hospitalizedContext, {
+          type: 'line',
           data: {
             labels: [],
             datasets: [
             {
               data: [],
-              label: 'Oahu',
-              backgroundColor: '#5899DA'
+              label: 'Total Hospitalized',
+              backgroundColor: '#5899DA',
+              order: 3,
             },
             {
               data: [],
-              label: 'Maui/Molokai/Lanai',
-              backgroundColor: '#E8743B'
+              label: 'Total Recovered',
+              backgroundColor: '#19A979',
+              fill: 0
             },
             {
               data: [],
-              label: 'Hawaii',
-              backgroundColor: '#19A979'
+              label: 'Total Deaths',
+              backgroundColor: '#E8743B',
+              fill: 'origin'
             },
-            {
-              data: [],
-              label: 'Kauai',
-              backgroundColor: '#6C8893',
-            },
-            {
-              data: [],
-              label: 'Total',
-              type: 'line',
-              fill: false,
-              color: '#000'
-            }
             ]
           },
           options: {
@@ -524,7 +527,7 @@
             showScale: false,
             title: {
               display: true,
-              text: "Daily COVID-19 Cases",
+              text: "Daily Hospital Results",
               fontSize: 32,
               fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
               fontColor: '#333',
@@ -538,7 +541,6 @@
             },
             scales: {
               yAxes: [{
-                stacked: true,
                 ticks: {
                   beginAtZero: false,
                 }
@@ -549,7 +551,6 @@
                 time: {
                   unit: 'month'
                 },
-                barThickness: 'flex',
               }]
             }
           }
@@ -587,7 +588,7 @@
             showScale: false,
             title: {
               display: true,
-              text: "Tested",
+              text: "COVID19 Test Results",
               fontSize: 32,
               fontFamily:"'Helvetica Neue', 'Helvetica', 'Arial'",
               fontColor: '#333',
@@ -618,6 +619,7 @@
       </script>
     </div>
   </div>
+  <div class="w-75 f6 tc center mv5 mid-gray"><p>These charts are brought to you by the letters S,T,A,Y @ home. <a href="https://resilienthawaii.org">Resilient Hawaii</a></p></div>
   <script data-goatcounter="https://resilienthawaii-charts.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
