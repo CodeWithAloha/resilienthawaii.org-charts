@@ -106,12 +106,12 @@
         data.rows.slice(1).slice(-1 * NUM_DAYS).forEach(function (item, index) {
           if (item[DATE_ROW_INDEX] !== null) {
             chart.data.labels.push(moment(item[0]).format('MM/DD/YY'));
+            chart.data.datasets[0].data.push(parseInt(item[TOTAL_TESTED_POSITIVE_ROW_INDEX]));
             if (item[TOTAL_TESTED_ROW_INDEX] !== null) {
-              chart.data.datasets[0].data.push(parseInt(item[TOTAL_TESTED_ROW_INDEX].replace(/,/g, ''), 10));
+              chart.data.datasets[1].data.push(parseInt(item[TOTAL_TESTED_ROW_INDEX].replace(/,/g, ''), 10));
             } else {
-              chart.data.datasets[0].data.push(item[TOTAL_TESTED_ROW_INDEX]);
+              chart.data.datasets[1].data.push(item[TOTAL_TESTED_ROW_INDEX]);
             }
-            chart.data.datasets[1].data.push(parseInt(item[TOTAL_TESTED_POSITIVE_ROW_INDEX]));
             chart.update();
           }
         });
@@ -569,16 +569,16 @@
             datasets: [
             {
               data: [],
-              label: 'Tested',
-              backgroundColor: '#5899DA',
+              label: 'Positive',
+              backgroundColor: '#E8743B',
               fill: true
             },
             {
               data: [],
-              label: 'Positive',
-              backgroundColor: '#E8743B',
+              label: 'Tested',
+              backgroundColor: '#5899DA',
               fill: true
-            }
+            },
             ]
           },
           options: {
