@@ -5,6 +5,14 @@
   <title>Hawaii COVID19 Charts & Statistics | Resilient Hawaii</title>
   <meta name="description" content="Charts & Statistics specific to Hawaii concerning the novel coronavirus global pandemic (COVID-19/SARS-CoV-2)" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/combine/npm/chart.js@2.9.3/dist/Chart.min.css,npm/tachyons@4.11.1" />
+  <style>
+    #cover {
+      background: url("/media/img/spinner.gif") no-repeat scroll center center #FFF;
+      position: absolute;
+      height: 100%;
+      width: 100%;
+    }
+  </style>
   <script src="https://cdn.jsdelivr.net/combine/npm/jquery@3.4.1,npm/moment@2.24.0,npm/chart.js@2.9.3,npm/chartjs-plugin-datalabels@0.7.0"></script>
   <script>
     var NUM_DAYS = 21;
@@ -208,6 +216,7 @@
       $.ajax({
         url: 'https://covid19-hawaii.herokuapp.com/hawaii_daily.sqlite?sql=select+Date%2C+%5BTotal+Cases%5D%2C+%5BTotal+Oahu+Res%5D%2C+%5BTotal+Maui+Res%5D%2C+%5BTotal+HIsland+Res%5D%2C+%5BTotal+Kauai+Res%5D%2C+%5BTotal+Hosp%5D%2C+%5BTotal+Deaths%5D%2C+%5BTotal+Released%5D%2C+%5BTotal+Tests%5D%2C+%5BNegative+Tests%5D%2C+%5BPositive+Tests%5D+from+hawaii_daily+order+by+rowid&_format=json',
         success: function(data) {
+          $('#cover').fadeOut(3000);
           covidData = data;
           populateStateDashboard(covidData);
           populateIslandDashboard(covidData);
@@ -232,6 +241,7 @@
 </head>
 <body class="system-sans-serif">
   <header class="w-100 ph3 pv3" style="background-color:#00b8bd"></header>
+  <div id="cover"></div>
   <div class="w-50 mw4-ns tc center mt3">
     <a href="https://resilienthawaii.org"><img src="/media/img/logo-color.png"/></a>
   </div>
